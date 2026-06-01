@@ -3,17 +3,31 @@
 cd C:\architecture-pro-propdevelopment\task6
 
 #с minikube не работает, используем kind:
-kind create cluster --config kind-config.yaml
+```bash
+# Создать простой кластер
+kind create cluster --config kind-simple.yaml
 
+# Скопировать audit-policy.yaml:
+docker cp .\audit-config\audit-policy.yaml kind-control-plane:/etc/kubernetes/pki/audit-policy.yaml
+
+# Обновить манифест kube-apiserver:
+docker cp kind-control-plane:/etc/kubernetes/manifests/kube-apiserver.yaml .\kube-apiserver.yaml
+
+#Добавляем строки:
+    - --audit-policy-file=/etc/kubernetes/pki/audit-policy.yaml
+    - --audit-log-path=/var/log/audit.log
+    - --audit-log-maxsize=10
+    - --audit-log-maxbackup=1
+
+#Сохраняем файл обратно:
+docker cp .\kube-apiserver.yaml kind-control-plane:/etc/kubernetes/manifests/kube-apiserver.yaml
+
+#Проверяем, что кластер в порядке:
+kubectl get pods -n kube-system
+```
 #файл audit-policy.yaml также пришлось поправить, т.к. в исходной версии не работает. В актуальной версии ругается на "*" в блоке group
 
-minikube start `
-  --extra-config=apiserver.audit-policy-file=/etc/kubernetes/audit-policy.yaml `
-  --extra-config=apiserver.audit-log-path=/var/log/audit.log `
-  --extra-config=apiserver.audit-log-maxsize=10 `
-  --extra-config=apiserver.audit-log-maxbackup=1 `
-  --mount-string="C:/architecture-pro-propdevelopment/task6/audit-config:/etc/kubernetes" `
-  --mount
+
 ```
 
 ## Выполнение симуляции инцидентов
